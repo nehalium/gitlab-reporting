@@ -11,6 +11,7 @@ class Projects:
     def __init__(self, client):
         self.client = client
         self.items = []
+        self.whitelist = self.get_whitelist()
 
     def clone(self):
         for item in self.items:
@@ -46,9 +47,13 @@ class Projects:
                 ))
 
             for item in result:
-                self.items.append(self.build_tuple(item))
+                if self.is_in_whitelist(item):
+                    self.items.append(self.build_tuple(item))
 
             page = page + 1
+
+    def is_in_whitelist(self, item):
+        return item["namespace"]["name"] in self.whitelist
 
     def sort_by_name(self):
         self.items = sorted(self.items, key=lambda projects: projects["name"], reverse=False)
@@ -75,6 +80,10 @@ class Projects:
     @staticmethod
     def get_git_ssh_command():
         return "ssh -i {}".format(config.get("General", "sshKeyPath"))
+
+    @staticmethod
+    def get_whitelist():
+        return config.get("General", "whitelist").split(",")
 
     @staticmethod
     def build_tuple(item):

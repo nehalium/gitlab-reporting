@@ -12,13 +12,12 @@ def main():
     projects = Projects(client)
     print("Loading projects...")
     projects.load()
+    projects.sort_by_namespace()
 
     print("Printing projects...")
-    projects.sort_by_last_activity_at()
     projects.print_results()
 
     print("Cloning projects...")
-    projects.sort_by_namespace()
     projects.clone()
 
 

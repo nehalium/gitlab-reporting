@@ -16,17 +16,20 @@ class Projects:
     def clone(self):
         for item in self.items:
             project_path = self.get_project_path(item)
-            print("Cloning {}...".format(project_path), end="")
-            with git.Git().custom_environment(git_ssh_command=self.get_git_ssh_command()):
-                git.Repo.clone_from(item["ssh_url_to_repo"], project_path)
-            print("done.")
+            if not self.directory_is_empty(project_path):
+                print("Already exists! {}".format(project_path))
+            else:
+                print("Cloning {}...".format(project_path), end="")
+                with git.Git().custom_environment(git_ssh_command=self.get_git_ssh_command()):
+                    git.Repo.clone_from(item["ssh_url_to_repo"], project_path)
+                print("done.")
 
     def get_project_path(self, item):
         return self.ensure_path(os.path.join(
             config.get("General", "cloneDir"),
             item["namespace"],
-            item["name"])
-        )
+            item["name"]
+        ))
 
     def load(self):
         page = 1
@@ -47,7 +50,7 @@ class Projects:
                 ))
 
             for item in result:
-                if self.is_in_whitelist(item):
+                if self.is_in_whitelist(item) and not item["archived"]:
                     self.items.append(self.build_tuple(item))
 
             page = page + 1
@@ -99,6 +102,10 @@ class Projects:
             "ssh_url_to_repo": item["ssh_url_to_repo"],
             "api_ref": item["_links"]["self"]
         }
+
+    @staticmethod
+    def directory_is_empty(path):
+        return len(os.listdir(path)) == 0
 
     @staticmethod
     def ensure_path(path):

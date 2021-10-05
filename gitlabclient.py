@@ -16,10 +16,14 @@ class GitlabClient:
             "per_page": per_page
         })
         return requests.get(
-            config.get("GitlabAPI", "url") + "/" + resource + "/" + query,
+            "/".join([
+                config.get("GitlabAPI", "url"),
+                resource,
+                query
+            ]),
             headers={
                 "Accept": "application/json",
-                "Authorization": "Bearer " + config.get("GitlabAPI", "token")
+                "Authorization": "Bearer {}".format(config.get("GitlabAPI", "token"))
             }
         )
 

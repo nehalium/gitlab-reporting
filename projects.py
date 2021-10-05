@@ -1,5 +1,6 @@
 import configparser
 import os
+import git
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -10,6 +11,21 @@ class Projects:
     def __init__(self, client):
         self.client = client
         self.items = []
+
+    def clone(self):
+        for item in self.items:
+            project_path = self.get_project_path(item)
+            print("Cloning {}...".format(project_path), end="")
+            with git.Git().custom_environment(git_ssh_command=self.get_git_ssh_command()):
+                git.Repo.clone_from(item["ssh_url_to_repo"], project_path)
+            print("done.")
+
+    def get_project_path(self, item):
+        return self.ensure_path(os.path.join(
+            config.get("General", "cloneDir"),
+            item["namespace"],
+            item["name"])
+        )
 
     def load(self):
         page = 1
@@ -24,7 +40,10 @@ class Projects:
             if config.getboolean("General", "refreshFixtures"):
                 self.write_result(result, page)
             if config.getboolean("General", "debug"):
-                print("Page: " + str(page) + "\t\t" + "# of items: " + str(len(result)))
+                print("Page: {page_num}\t\t# of items: {total}".format(
+                    page_num=str(page),
+                    total=str(len(result))
+                ))
 
             for item in result:
                 self.items.append(self.build_tuple(item))
@@ -54,6 +73,10 @@ class Projects:
             )
 
     @staticmethod
+    def get_git_ssh_command():
+        return "ssh -i {}".format(config.get("General", "sshKeyPath"))
+
+    @staticmethod
     def build_tuple(item):
         return {
             "id": item["id"],
@@ -69,11 +92,18 @@ class Projects:
         }
 
     @staticmethod
+    def ensure_path(path):
+        path = path.replace(" ", "_")
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
+
+    @staticmethod
     def write_result(result, page):
         path = "test/fixtures"
         if not os.path.exists(path):
             os.makedirs(path)
-        result_file = open(path + "/projects-" + str(page) + ".json", "w")
+        result_file = open(path + "/projects-{}.json".format(str(page)), "w")
         result_file.write(str(result))
         result_file.close()
 

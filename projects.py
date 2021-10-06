@@ -14,15 +14,18 @@ class Projects:
         self.whitelist = self.get_whitelist()
 
     def clone(self):
+        index = 1
+        print("Cloning {} projects...".format(str(len(self.items))))
         for item in self.items:
             project_path = self.get_project_path(item)
             if not self.directory_is_empty(project_path):
-                print("Already exists! {}".format(project_path))
+                print("{index}. Already exists! {project_path}".format(index=index, project_path=project_path))
             else:
-                print("Cloning {}...".format(project_path), end="")
+                print("{index}. Cloning {project_path}...".format(index=index, project_path=project_path), end="")
                 with git.Git().custom_environment(git_ssh_command=self.get_git_ssh_command()):
                     git.Repo.clone_from(item["ssh_url_to_repo"], project_path)
                 print("done.")
+            index += 1
 
     def get_project_path(self, item):
         return self.ensure_path(os.path.join(
